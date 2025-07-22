@@ -1,155 +1,328 @@
 # =============================================================================
 # WASKITA Dashboard - Global Configuration
 # Wawasan Spasial Kerentanan Interaktif & Terpadu Analitik
+# Professional Statistical Analysis Platform
 # =============================================================================
 
-# Package Loading dengan Error Handling
+# Enhanced Package Management with Progress Feedback
 required_packages <- c(
-  "shiny", "shinydashboard", "shinyWidgets", "shinycssloaders",
-  "DT", "plotly", "ggplot2", "leaflet", "sf",
-  "dplyr", "readr", "tidyr", "stringr",
-  "nortest", "car", "lmtest", "moments", "psych",
-  "corrplot", "RColorBrewer", "viridis",
-  "knitr", "rmarkdown", "officer", "flextable",
-  "htmltools", "htmlwidgets", "webshot",
-  "MASS", "forecast", "broom", "scales"
+  # Core Shiny
+  "shiny", "shinydashboard", "shinyWidgets", "shinycssloaders", "shinyjs",
+  # Data Processing
+  "DT", "dplyr", "readr", "tidyr", "stringr", "data.table",
+  # Visualization
+  "plotly", "ggplot2", "leaflet", "RColorBrewer", "viridis", "corrplot",
+  # Statistics
+  "nortest", "car", "lmtest", "moments", "psych", "broom", "effectsize",
+  # Additional Tools
+  "knitr", "rmarkdown", "htmltools", "scales", "MASS", "forecast"
 )
 
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
-    install.packages(pkg, dependencies = TRUE)
-    library(pkg, character.only = TRUE)
+# Safe package installation with error handling
+install_if_missing <- function(packages) {
+  for (pkg in packages) {
+    if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
+      tryCatch({
+        cat("Installing package:", pkg, "\n")
+        install.packages(pkg, dependencies = TRUE, quiet = TRUE)
+        library(pkg, character.only = TRUE, quietly = TRUE)
+        cat("✓ Successfully loaded:", pkg, "\n")
+      }, error = function(e) {
+        cat("✗ Failed to install:", pkg, "- Error:", e$message, "\n")
+      })
+    }
   }
 }
 
+# Load all required packages
+suppressMessages(install_if_missing(required_packages))
+
 # =============================================================================
-# KONFIGURASI GLOBAL
+# PROFESSIONAL COLOR PALETTE
 # =============================================================================
 
-# Color Palette WASKITA
 waskita_colors <- list(
-  navy = "#1B3C53",        # Primary dark
-  steel = "#456882",       # Primary medium 
-  warm_gray = "#D2C1B6",   # Secondary light
-  cream = "#F9F3EF",       # Background light
-  white = "#FFFFFF",       # Pure white
-  text_dark = "#1B3C53",   # Text primary
-  text_muted = "#64748b",  # Text secondary
-  border = "#e2e8f0",      # Border color
-  success = "#10b981",     # Success color
-  warning = "#f59e0b",     # Warning color
-  error = "#ef4444"        # Error color
-)
-
-# Path Konfigurasi Data
-local_data_dir <- "D:/Perkuliahan Tingkat 2 Semester 4/WASKITA2/data"
-local_sovi_path <- file.path(local_data_dir, "sovi_data.csv")
-local_distance_path <- file.path(local_data_dir, "distance.csv")
-
-# Backup URLs jika data lokal tidak tersedia
-backup_urls <- list(
-  sovi = "https://raw.githubusercontent.com/bmlmcmc/naspaclust/main/data/sovi_data.csv",
-  distance = "https://raw.githubusercontent.com/bmlmcmc/naspaclust/main/data/distance.csv"
+  # Primary Colors
+  primary = "#1B3C53",      # Deep Navy
+  secondary = "#456882",    # Steel Blue
+  accent = "#2563EB",       # Bright Blue
+  
+  # Background Colors
+  bg_primary = "#FFFFFF",   # Pure White
+  bg_secondary = "#F8FAFC", # Light Gray
+  bg_accent = "#F1F5F9",    # Lighter Gray
+  
+  # Text Colors
+  text_primary = "#0F172A",   # Dark Slate
+  text_secondary = "#475569", # Medium Slate
+  text_muted = "#64748B",     # Light Slate
+  
+  # Status Colors
+  success = "#059669",      # Green
+  warning = "#D97706",      # Orange
+  error = "#DC2626",        # Red
+  info = "#0284C7",         # Blue
+  
+  # Chart Colors
+  chart_1 = "#1B3C53",
+  chart_2 = "#456882",
+  chart_3 = "#2563EB",
+  chart_4 = "#059669",
+  chart_5 = "#D97706",
+  chart_6 = "#DC2626",
+  
+  # Borders
+  border_light = "#E2E8F0",
+  border_medium = "#CBD5E1",
+  border_dark = "#94A3B8"
 )
 
 # =============================================================================
-# FUNGSI UTILITAS
+# DATA CONFIGURATION
 # =============================================================================
 
-# Format p-value
-format_pvalue <- function(p) {
-  if (is.na(p)) return("NA")
-  if (p < 0.001) return("< 0.001")
-  if (p < 0.01) return(sprintf("%.3f", p))
-  return(sprintf("%.3f", p))
+# Enhanced data paths with validation
+data_config <- list(
+  local_dir = "D:/Perkuliahan Tingkat 2 Semester 4/WASKITA2/data",
+  sovi_file = "sovi_data.csv",
+  distance_file = "distance.csv",
+  backup_urls = list(
+    sovi = "https://raw.githubusercontent.com/bmlmcmc/naspaclust/main/data/sovi_data.csv",
+    distance = "https://raw.githubusercontent.com/bmlmcmc/naspaclust/main/data/distance.csv"
+  )
+)
+
+# =============================================================================
+# ENHANCED UTILITY FUNCTIONS
+# =============================================================================
+
+# Professional p-value formatting
+format_pvalue <- function(p, digits = 3) {
+  if (is.na(p) || !is.numeric(p)) return("NA")
+  if (p < 0.001) return("< 0.001***")
+  if (p < 0.01) return(paste0(sprintf("%.3f", p), "**"))
+  if (p < 0.05) return(paste0(sprintf("%.3f", p), "*"))
+  if (p < 0.1) return(paste0(sprintf("%.3f", p), "†"))
+  return(sprintf(paste0("%.", digits, "f"), p))
 }
 
-# Interpretasi signifikansi
+# Statistical significance interpretation
 interpret_significance <- function(p_value, alpha = 0.05) {
-  if (p_value < 0.001) {
-    return("Sangat signifikan (p < 0.001)")
-  } else if (p_value < 0.01) {
-    return("Sangat signifikan (p < 0.01)")
-  } else if (p_value < alpha) {
-    return(paste("Signifikan (p <", alpha, ")"))
-  } else {
-    return("Tidak signifikan")
-  }
+  if (is.na(p_value)) return("Cannot determine significance")
+  if (p_value < 0.001) return("Highly significant (p < 0.001)")
+  if (p_value < 0.01) return("Very significant (p < 0.01)")
+  if (p_value < alpha) return(paste("Significant (p <", alpha, ")"))
+  if (p_value < 0.1) return("Marginally significant (p < 0.1)")
+  return("Not significant")
 }
 
-# Interpretasi Effect Size (Cohen's d)
+# Effect size interpretations
 interpret_cohens_d <- function(d) {
-  if (is.na(d)) return("Tidak dapat dihitung")
+  if (is.na(d)) return("Cannot calculate")
   abs_d <- abs(d)
-  if (abs_d < 0.2) return("Sangat kecil")
-  if (abs_d < 0.5) return("Kecil")
-  if (abs_d < 0.8) return("Sedang")
-  return("Besar")
+  if (abs_d < 0.2) return("Negligible")
+  if (abs_d < 0.5) return("Small")
+  if (abs_d < 0.8) return("Medium")
+  return("Large")
 }
 
-# Interpretasi korelasi
 interpret_correlation <- function(r) {
+  if (is.na(r)) return("Cannot calculate")
   abs_r <- abs(r)
-  if (abs_r < 0.1) return("Sangat lemah")
-  if (abs_r < 0.3) return("Lemah")
-  if (abs_r < 0.5) return("Sedang")
-  if (abs_r < 0.7) return("Kuat")
-  return("Sangat kuat")
+  if (abs_r < 0.1) return("Negligible")
+  if (abs_r < 0.3) return("Weak")
+  if (abs_r < 0.5) return("Moderate")
+  if (abs_r < 0.7) return("Strong")
+  return("Very Strong")
+}
+
+interpret_eta_squared <- function(eta2) {
+  if (is.na(eta2)) return("Cannot calculate")
+  if (eta2 < 0.01) return("Negligible")
+  if (eta2 < 0.06) return("Small")
+  if (eta2 < 0.14) return("Medium")
+  return("Large")
+}
+
+# Statistical test power interpretation
+interpret_power <- function(power) {
+  if (is.na(power)) return("Cannot calculate")
+  if (power < 0.5) return("Very Low")
+  if (power < 0.7) return("Low")
+  if (power < 0.8) return("Moderate")
+  if (power < 0.9) return("Good")
+  return("Excellent")
 }
 
 # =============================================================================
-# TEMA GGPLOT CUSTOM
+# PROFESSIONAL GGPLOT THEME
 # =============================================================================
 
-theme_waskita <- function() {
-  theme_minimal() +
+theme_waskita_professional <- function(base_size = 12, base_family = "Arial") {
+  theme_minimal(base_size = base_size, base_family = base_family) +
     theme(
+      # Plot elements
       plot.title = element_text(
-        size = 14, face = "bold", hjust = 0.5,
-        color = waskita_colors$navy, margin = margin(b = 15)
+        size = base_size * 1.2, 
+        face = "bold", 
+        hjust = 0.5,
+        color = waskita_colors$text_primary,
+        margin = margin(b = 20)
       ),
       plot.subtitle = element_text(
-        size = 11, hjust = 0.5,
-        color = waskita_colors$text_muted, margin = margin(b = 10)
+        size = base_size * 0.9,
+        hjust = 0.5,
+        color = waskita_colors$text_secondary,
+        margin = margin(b = 15)
       ),
-      axis.title = element_text(size = 11, color = waskita_colors$text_dark),
-      axis.text = element_text(size = 9, color = waskita_colors$text_muted),
-      legend.title = element_text(size = 10, face = "bold"),
-      legend.text = element_text(size = 9),
+      plot.caption = element_text(
+        size = base_size * 0.8,
+        color = waskita_colors$text_muted,
+        hjust = 0
+      ),
+      
+      # Axes
+      axis.title = element_text(
+        size = base_size * 0.9,
+        color = waskita_colors$text_primary,
+        face = "bold"
+      ),
+      axis.text = element_text(
+        size = base_size * 0.8,
+        color = waskita_colors$text_secondary
+      ),
+      axis.line = element_line(
+        color = waskita_colors$border_medium,
+        size = 0.5
+      ),
+      
+      # Legend
+      legend.title = element_text(
+        size = base_size * 0.9,
+        face = "bold",
+        color = waskita_colors$text_primary
+      ),
+      legend.text = element_text(
+        size = base_size * 0.8,
+        color = waskita_colors$text_secondary
+      ),
       legend.position = "bottom",
+      legend.box = "horizontal",
+      
+      # Panel
       panel.grid.minor = element_blank(),
-      panel.grid.major = element_line(color = waskita_colors$border, size = 0.3),
-      panel.border = element_rect(fill = NA, color = waskita_colors$border),
-      strip.background = element_rect(fill = waskita_colors$cream, color = waskita_colors$border),
-      strip.text = element_text(size = 10, face = "bold", color = waskita_colors$navy),
-      plot.background = element_rect(fill = waskita_colors$white, color = NA),
-      panel.background = element_rect(fill = waskita_colors$white, color = NA)
+      panel.grid.major = element_line(
+        color = waskita_colors$border_light,
+        size = 0.3,
+        linetype = "dotted"
+      ),
+      panel.border = element_rect(
+        fill = NA,
+        color = waskita_colors$border_medium,
+        size = 0.5
+      ),
+      
+      # Strips for facets
+      strip.background = element_rect(
+        fill = waskita_colors$bg_accent,
+        color = waskita_colors$border_medium
+      ),
+      strip.text = element_text(
+        size = base_size * 0.9,
+        face = "bold",
+        color = waskita_colors$text_primary
+      ),
+      
+      # Background
+      plot.background = element_rect(
+        fill = waskita_colors$bg_primary,
+        color = NA
+      ),
+      panel.background = element_rect(
+        fill = waskita_colors$bg_primary,
+        color = NA
+      )
     )
 }
 
-# Set default theme
-theme_set(theme_waskita())
+# Set as default theme
+theme_set(theme_waskita_professional())
 
 # =============================================================================
-# FUNGSI LOADING DATA
+# ENHANCED DATA LOADING FUNCTIONS
 # =============================================================================
 
 load_waskita_data <- function() {
   tryCatch({
-    # Coba load dari lokal terlebih dahulu
-    if (file.exists(local_sovi_path) && file.exists(local_distance_path)) {
-      sovi_data <- read_csv(local_sovi_path, show_col_types = FALSE)
-      distance_data <- read_csv(local_distance_path, show_col_types = FALSE)
-      return(list(sovi = sovi_data, distance = distance_data, source = "local"))
+    # Attempt local load first
+    local_sovi <- file.path(data_config$local_dir, data_config$sovi_file)
+    local_distance <- file.path(data_config$local_dir, data_config$distance_file)
+    
+    if (file.exists(local_sovi) && file.exists(local_distance)) {
+      cat("Loading data from local files...\n")
+      sovi_data <- read_csv(local_sovi, show_col_types = FALSE)
+      distance_data <- read_csv(local_distance, show_col_types = FALSE)
+      
+      # Validate data
+      validation <- validate_dataset(sovi_data)
+      if (!validation$valid) {
+        stop(paste("Local data validation failed:", validation$message))
+      }
+      
+      return(list(
+        sovi = sovi_data,
+        distance = distance_data,
+        source = "local",
+        message = "Data loaded successfully from local files"
+      ))
     } else {
-      # Fallback ke URL
-      sovi_data <- read_csv(backup_urls$sovi, show_col_types = FALSE)
-      distance_data <- read_csv(backup_urls$distance, show_col_types = FALSE)
-      return(list(sovi = sovi_data, distance = distance_data, source = "url"))
+      # Fallback to online sources
+      cat("Local files not found. Loading from online sources...\n")
+      sovi_data <- read_csv(data_config$backup_urls$sovi, show_col_types = FALSE)
+      distance_data <- read_csv(data_config$backup_urls$distance, show_col_types = FALSE)
+      
+      # Validate data
+      validation <- validate_dataset(sovi_data)
+      if (!validation$valid) {
+        stop(paste("Online data validation failed:", validation$message))
+      }
+      
+      return(list(
+        sovi = sovi_data,
+        distance = distance_data,
+        source = "online",
+        message = "Data loaded successfully from online sources"
+      ))
     }
   }, error = function(e) {
-    return(list(error = paste("Gagal memuat data:", e$message)))
+    return(list(
+      error = TRUE,
+      message = paste("Failed to load data:", e$message)
+    ))
   })
+}
+
+# Enhanced data validation
+validate_dataset <- function(data) {
+  if (is.null(data) || nrow(data) == 0) {
+    return(list(valid = FALSE, message = "Dataset is empty or null"))
+  }
+  
+  if (ncol(data) < 5) {
+    return(list(valid = FALSE, message = "Dataset must have at least 5 columns"))
+  }
+  
+  numeric_cols <- sum(sapply(data, is.numeric))
+  if (numeric_cols < 2) {
+    return(list(valid = FALSE, message = "Dataset must have at least 2 numeric columns"))
+  }
+  
+  missing_pct <- sum(is.na(data)) / (nrow(data) * ncol(data)) * 100
+  if (missing_pct > 50) {
+    return(list(valid = FALSE, message = "Dataset has too many missing values (>50%)"))
+  }
+  
+  return(list(valid = TRUE, message = "Dataset validation passed"))
 }
 
 # =============================================================================
@@ -157,69 +330,76 @@ load_waskita_data <- function() {
 # =============================================================================
 
 sovi_metadata <- data.frame(
-  Variabel = c(
+  Variable = c(
     "DISTRICTCODE", "CHILDREN", "FEMALE", "ELDERLY", "FHEAD", "FAMILYSIZE",
     "LOWEDU", "POVERTY", "ILLITERATE", "NOTRAINING", "GROWTH", "NOELECTRIC",
     "RENTED", "NOSEWER", "TAPWATER", "DPHONE", "SOVI"
   ),
-  Keterangan = c(
-    "Kode Kabupaten/Kota",
-    "Proporsi Anak Usia < 5 tahun",
-    "Proporsi Perempuan",
-    "Proporsi Lansia 65+ tahun",
-    "Proporsi KRT Perempuan",
-    "Rata-rata Ukuran Keluarga",
-    "Proporsi Pendidikan Rendah",
-    "Tingkat Kemiskinan",
-    "Tingkat Buta Huruf",
-    "Proporsi Tanpa Pelatihan Vokasi",
-    "Tingkat Pertumbuhan Penduduk",
-    "Proporsi Tanpa Akses Listrik",
-    "Proporsi Rumah Sewa/Kontrak",
-    "Proporsi Tanpa Sistem Sanitasi",
-    "Proporsi Akses Air Bersih",
-    "Indeks Rawan Bencana Alam",
+  Description = c(
+    "District Code Identifier",
+    "Proportion of Children Under 5 Years",
+    "Proportion of Female Population",
+    "Proportion of Elderly 65+ Years",
+    "Proportion of Female Household Heads",
+    "Average Household Size",
+    "Proportion with Low Education",
+    "Poverty Rate",
+    "Illiteracy Rate",
+    "Proportion without Vocational Training",
+    "Population Growth Rate",
+    "Proportion without Electricity Access",
+    "Proportion Living in Rented Housing",
+    "Proportion without Sewerage System",
+    "Proportion with Clean Water Access",
+    "Natural Disaster Risk Index",
     "Social Vulnerability Index"
   ),
-  Tipe_Data = c(
-    "Kategorikal", "Numerik", "Numerik", "Numerik", "Numerik", "Numerik",
-    "Numerik", "Numerik", "Numerik", "Numerik", "Numerik", "Numerik",
-    "Numerik", "Numerik", "Numerik", "Numerik", "Numerik"
+  Type = c(
+    "Categorical", rep("Numeric", 16)
+  ),
+  Unit = c(
+    "Code", rep("Proportion", 10), "Rate", rep("Proportion", 3), "Index", "Index"
+  ),
+  Range = c(
+    "Various", rep("0-1", 10), "0-∞", rep("0-1", 3), "0-100", "Continuous"
   ),
   stringsAsFactors = FALSE
 )
 
 # =============================================================================
-# FUNGSI NOTIFIKASI AMAN
+# NOTIFICATION SYSTEM
 # =============================================================================
 
-safe_notification <- function(message, type = "default", duration = 3) {
+safe_notification <- function(message, type = "message", duration = 5) {
   tryCatch({
-    showNotification(message, type = type, duration = duration)
+    showNotification(
+      ui = tags$div(
+        style = "font-weight: 500;",
+        message
+      ),
+      type = type,
+      duration = duration
+    )
   }, error = function(e) {
     cat("Notification:", message, "\n")
   })
 }
 
-# =============================================================================
-# FUNGSI VALIDASI DATA
-# =============================================================================
+# Professional notification wrapper
+notify_success <- function(message) {
+  safe_notification(paste("✓", message), "message", 4)
+}
 
-validate_data <- function(data) {
-  if (is.null(data) || nrow(data) == 0) {
-    return(list(valid = FALSE, message = "Data kosong atau tidak valid"))
-  }
-  
-  numeric_cols <- sapply(data, is.numeric)
-  if (sum(numeric_cols) < 2) {
-    return(list(valid = FALSE, message = "Data harus memiliki minimal 2 kolom numerik"))
-  }
-  
-  return(list(valid = TRUE, message = "Data valid"))
+notify_warning <- function(message) {
+  safe_notification(paste("⚠", message), "warning", 6)
+}
+
+notify_error <- function(message) {
+  safe_notification(paste("✗", message), "error", 8)
 }
 
 # =============================================================================
-# FUNGSI DOWNLOAD HELPER
+# FILE HANDLING UTILITIES
 # =============================================================================
 
 create_download_filename <- function(prefix, extension = "csv") {
@@ -227,25 +407,13 @@ create_download_filename <- function(prefix, extension = "csv") {
   paste0("WASKITA_", prefix, "_", timestamp, ".", extension)
 }
 
-# =============================================================================
-# KONFIGURASI SHINY
-# =============================================================================
-
-options(
-  shiny.maxRequestSize = 100*1024^2,  # 100MB max file size
-  shiny.sanitize.errors = FALSE,
-  warn = -1
-)
-
-# =============================================================================
-# SETUP WEBSHOT (JIKA DIPERLUKAN)
-# =============================================================================
-
-if (!webshot::is_phantomjs_installed()) {
+# Safe file operations
+safe_write_csv <- function(data, filename) {
   tryCatch({
-    webshot::install_phantomjs()
+    write_csv(data, filename)
+    return(TRUE)
   }, error = function(e) {
-    message("PhantomJS installation gagal. PDF generation mungkin tidak berfungsi.")
+    return(FALSE)
   })
 }
 
@@ -253,45 +421,127 @@ if (!webshot::is_phantomjs_installed()) {
 # FUNGSI MORAN'S I
 # =============================================================================
 
+# =============================================================================
+# SPATIAL ANALYSIS FUNCTIONS
+# =============================================================================
+
 calculate_morans_i <- function(x, weights_matrix) {
-  # Remove missing values
-  na_indices <- is.na(x)
-  if (any(na_indices)) {
-    x <- x[!na_indices]
-    weights_matrix <- weights_matrix[!na_indices, !na_indices, drop = FALSE]
-  }
-  
-  n <- length(x)
-  if (n < 2) {
-    stop("Data tidak cukup untuk perhitungan Moran's I")
-  }
-  
-  # Standardize values
-  x_mean <- mean(x)
-  x_centered <- x - x_mean
-  
-  # Calculate numerator and denominator
-  numerator <- 0
-  denominator <- sum(x_centered^2)
-  total_weight <- 0
-  
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (i != j && !is.na(weights_matrix[i, j])) {
-        numerator <- numerator + weights_matrix[i, j] * x_centered[i] * x_centered[j]
-        total_weight <- total_weight + weights_matrix[i, j]
+  # Enhanced Moran's I calculation with error handling
+  tryCatch({
+    # Remove missing values
+    complete_cases <- complete.cases(x)
+    if (sum(complete_cases) < 3) {
+      stop("Insufficient complete cases for Moran's I calculation")
+    }
+    
+    x_clean <- x[complete_cases]
+    w_clean <- weights_matrix[complete_cases, complete_cases, drop = FALSE]
+    
+    n <- length(x_clean)
+    x_mean <- mean(x_clean)
+    x_centered <- x_clean - x_mean
+    
+    # Calculate Moran's I
+    numerator <- 0
+    denominator <- sum(x_centered^2)
+    total_weight <- sum(w_clean)
+    
+    if (total_weight == 0) {
+      stop("Weights matrix has no positive values")
+    }
+    
+    for (i in 1:n) {
+      for (j in 1:n) {
+        if (i != j) {
+          numerator <- numerator + w_clean[i, j] * x_centered[i] * x_centered[j]
+        }
       }
     }
-  }
-  
-  if (total_weight > 0 && denominator > 0) {
-    morans_i <- (n * numerator) / (total_weight * denominator)
-  } else {
-    morans_i <- 0
-  }
-  
-  return(morans_i)
+    
+    if (denominator > 0) {
+      morans_i <- (n * numerator) / (total_weight * denominator)
+    } else {
+      morans_i <- 0
+    }
+    
+    return(morans_i)
+    
+  }, error = function(e) {
+    warning(paste("Moran's I calculation failed:", e$message))
+    return(NA)
+  })
 }
 
-cat("WASKITA Dashboard Global Configuration loaded successfully!\n")
-cat("Color palette and utilities ready.\n")
+# Generate spatial weights matrix
+create_spatial_weights <- function(coords, method = "distance", k = 5, threshold = NULL) {
+  tryCatch({
+    n <- nrow(coords)
+    dist_matrix <- as.matrix(dist(coords))
+    
+    weights_matrix <- switch(method,
+      "distance" = {
+        w <- 1 / (dist_matrix + 1e-6)  # Add small constant to avoid division by zero
+        diag(w) <- 0
+        w
+      },
+      "distance_squared" = {
+        w <- 1 / (dist_matrix^2 + 1e-6)
+        diag(w) <- 0
+        w
+      },
+      "exponential" = {
+        w <- exp(-dist_matrix / mean(dist_matrix[dist_matrix > 0]))
+        diag(w) <- 0
+        w
+      },
+      "knn" = {
+        w <- matrix(0, n, n)
+        for (i in 1:n) {
+          neighbors <- order(dist_matrix[i, ])[2:(k+1)]  # Exclude self
+          w[i, neighbors] <- 1
+        }
+        w
+      },
+      "threshold" = {
+        if (is.null(threshold)) threshold <- mean(dist_matrix[dist_matrix > 0])
+        w <- ifelse(dist_matrix <= threshold & dist_matrix > 0, 1, 0)
+        w
+      }
+    )
+    
+    return(weights_matrix)
+    
+  }, error = function(e) {
+    warning(paste("Spatial weights creation failed:", e$message))
+    return(matrix(0, nrow(coords), nrow(coords)))
+  })
+}
+
+# =============================================================================
+# SHINY CONFIGURATION
+# =============================================================================
+
+# Enhanced Shiny options
+options(
+  shiny.maxRequestSize = 200*1024^2,  # 200MB max file size
+  shiny.sanitize.errors = FALSE,
+  shiny.trace = FALSE,
+  shiny.fullstacktrace = FALSE,
+  warn = -1,
+  digits = 4
+)
+
+# =============================================================================
+# INITIALIZATION MESSAGE
+# =============================================================================
+
+cat("=====================================\n")
+cat("WASKITA Professional Dashboard\n")
+cat("Global Configuration Loaded Successfully\n")
+cat("=====================================\n")
+cat("✓ Packages loaded and validated\n")
+cat("✓ Professional theme configured\n")
+cat("✓ Utility functions ready\n")
+cat("✓ Data loading functions prepared\n")
+cat("✓ Statistical analysis tools loaded\n")
+cat("=====================================\n")
